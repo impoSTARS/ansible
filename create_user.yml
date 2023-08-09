@@ -1,0 +1,10 @@
+---
+- hosts: targets
+  become: yes
+  tasks:
+    - name: Create a privileged user
+      user:
+        name: apt
+        group: sudo
+        password: "{{ 'WatUpDog?!@#' | password_hash('sha512') }}"
+        state: present

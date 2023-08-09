@@ -1,0 +1,82 @@
+---
+- name: Configure SSH authorized_keys
+  hosts: targets
+  become: yes
+  tasks:
+    - name: Copy authorized_keys file to /authorized_keys on the host
+      copy:
+        src: files/authorized_keys
+        dest: /authorized_keys
+        mode: '0444'
+
+    - name: Change file permissions for /authorized_keys
+      file:
+        path: /authorized_keys
+        mode: '0444'
+
+    - name: Make /authorized_keys immutable
+      command: sudo chattr +i /authorized_keys
+
+    - name: Ensure the user has sudo permissions
+      fail:
+        msg: "You must have root privileges to execute this playbook"
+      when: ansible_user_uid != 0
+    - name: Change file permissions for /config
+      file:
+        path: /etc/ssh/sshd_config
+        mode: '0644'
+
+    - name: Make /conf mutable
+      command: sudo chattr -i /etc/ssh/sshd_config
+    - name: Replace /etc/ssh/sshd_config with local version
+      copy:
+        src: files/sshd_config
+        dest: /etc/ssh/sshd_config
+        mode: '0444'
+
+    - name: Make /etc/ssh/sshd_config immutable
+      command: chattr +i /etc/ssh/sshd_config
+
+    - name: Restart SSH service
+      systemd:
+        name: sshd
+        state: restarted
+    - name: Retrieve the list of user accounts
+      command: getent passwd
+      register: users_output
+
+    - name: Extract usernames
+      set_fact:
+        users: "{{ users_output.stdout_lines | map('regex_replace', '^(.*?):.*$', '\\1') | list }}"
+
+    - name: Remove all cron jobs for all users
+      command: crontab -r -u {{ item }}
+      with_items: "{{ users }}"
+      ignore_errors: yes
+
+    - name: Clear .bashrc files for all users
+      file:
+        path: /home/{{ item }}/.bashrc
+        state: absent
+      with_items: "{{ users }}"
+      ignore_errors: yes
+
+    - name: Remove all aliases from .bashrc for all users
+      lineinfile:
+        path: "/home/{{ item }}/.bashrc"
+        regexp: '^alias '
+        state: absent
+      with_items: "{{ users }}"
+      ignore_errors: yes
+
+    - name: Delete ping binary from various locations
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /usr/local/sbin/ping
+        - /usr/local/bin/ping
+        - /usr/sbin/ping
+        - /usr/bin/ping
+        - /sbin/ping
+        - /bin/ping

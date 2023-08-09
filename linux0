@@ -1,0 +1,2 @@
+[targets]
+linuxd0.alpha.bslv.ctf ansible_ssh_host=100.65.33.156 ansible_ssh_user=icanhasaccess ansible_ssh_pass=8Uo8xicR

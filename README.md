@@ -1,0 +1,6 @@
+ok: [linux1.alpha.bslv.ctf]
+ok: [mail0.alpha.bslv.ctf]
+ok: [linuxd0.alpha.bslv.ctf]
+ok: [ghost0.alpha.bslv.ctf]
+ok: [msql0.alpha.bslv.ctf]
+ok: [cookie-puzzle0.alpha.bslv.ctf]
